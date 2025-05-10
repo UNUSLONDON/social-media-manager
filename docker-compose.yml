@@ -1,0 +1,10 @@
+services:
+  vitereactshadcnts:
+    image: vitereactshadcnts
+    build:
+      context: c-2043-main
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 8080:8080
