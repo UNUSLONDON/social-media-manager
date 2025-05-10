@@ -78,7 +78,7 @@ export const AirtableProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch bases');
+        throw new Error(`Failed to fetch bases: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -157,7 +157,14 @@ export const AirtableProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const fetchTables = async (baseId: string): Promise<AirtableTable[]> => {
-    if (!config?.token) return [];
+    if (!config?.token) {
+      toast({
+        title: "Error",
+        description: "No authentication token found. Please reconnect to Airtable.",
+        variant: "destructive"
+      });
+      return [];
+    }
     
     setIsLoading(true);
     try {
@@ -168,7 +175,7 @@ export const AirtableProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch tables');
+        throw new Error(`Failed to fetch tables: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -183,7 +190,7 @@ export const AirtableProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error("Error fetching tables:", error);
       toast({
         title: "Failed to Load Tables",
-        description: "Could not retrieve tables from the selected base.",
+        description: "Could not retrieve tables from the selected base. Please check your permissions.",
         variant: "destructive",
       });
       return [];
@@ -193,10 +200,27 @@ export const AirtableProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const fetchViews = async (baseId: string, tableId: string): Promise<AirtableView[]> => {
-    if (!config?.token) return [];
+    if (!config?.token) {
+      toast({
+        title: "Error",
+        description: "No authentication token found. Please reconnect to Airtable.",
+        variant: "destructive"
+      });
+      return [];
+    }
+
+    if (!baseId || !tableId) {
+      toast({
+        title: "Error",
+        description: "Base ID and Table ID are required to fetch views.",
+        variant: "destructive"
+      });
+      return [];
+    }
     
     setIsLoading(true);
     try {
+      console.log(`Fetching views for base: ${baseId}, table: ${tableId}`);
       const response = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables/${tableId}/views`, {
         headers: {
           'Authorization': `Bearer ${config.token}`,
@@ -204,7 +228,7 @@ export const AirtableProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch views');
+        throw new Error(`Failed to fetch views: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -219,7 +243,7 @@ export const AirtableProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error("Error fetching views:", error);
       toast({
         title: "Failed to Load Views",
-        description: "Could not retrieve views from the selected table.",
+        description: "Could not retrieve views from the selected table. Please check your permissions.",
         variant: "destructive",
       });
       return [];
