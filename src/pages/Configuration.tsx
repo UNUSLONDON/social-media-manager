@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAirtable } from "@/contexts/AirtableContext";
@@ -49,6 +48,8 @@ export default function Configuration() {
   const { theme, updateTheme, resetTheme } = useTheme();
   
   const { clearData } = useData();
+
+  const [tokenInput, setTokenInput] = useState("");
   
   const [selectedBase, setSelectedBase] = useState("");
   const [selectedTables, setSelectedTables] = useState<{[key: string]: string}>({
@@ -140,13 +141,14 @@ export default function Configuration() {
     });
   }, [theme]);
   
-  const handleAirtableAuthenticate = async () => {
+  const handleAirtableAuthenticate = async (token: string) => {
     setIsLoading(prev => ({ ...prev, airtable: true }));
     
     try {
-      const success = await authenticateAirtable();
+      const success = await authenticateAirtable(token);
       if (success) {
-        fetchBases();
+        await fetchBases();
+        setTokenInput(""); // Clear the input on success
       }
     } finally {
       setIsLoading(prev => ({ ...prev, airtable: false }));
@@ -313,7 +315,7 @@ export default function Configuration() {
                         <p className="text-sm text-muted-foreground">
                           {isAirtableAuthenticated 
                             ? "Your Airtable account is connected"
-                            : "Connect your Airtable account to access your bases"}
+                            : "Connect your Airtable account using a Personal Access Token"}
                         </p>
                         
                         {isAirtableAuthenticated && (
@@ -334,17 +336,25 @@ export default function Configuration() {
                           Disconnect
                         </Button>
                       ) : (
-                        <Button 
-                          onClick={handleAirtableAuthenticate}
-                          disabled={isLoading.airtable}
-                        >
-                          {isLoading.airtable ? (
-                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Key className="mr-2 h-4 w-4" />
-                          )}
-                          Connect to Airtable
-                        </Button>
+                        <div className="flex gap-2">
+                          <Input
+                            type="password"
+                            placeholder="Enter your Personal Access Token"
+                            value={tokenInput}
+                            onChange={(e) => setTokenInput(e.target.value)}
+                          />
+                          <Button 
+                            onClick={() => handleAirtableAuthenticate(tokenInput)}
+                            disabled={isLoading.airtable || !tokenInput}
+                          >
+                            {isLoading.airtable ? (
+                              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Key className="mr-2 h-4 w-4" />
+                            )}
+                            Connect
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -804,6 +814,7 @@ export default function Configuration() {
                       <Select
                         value={themeForm.headingWeight.toString()}
                         onValueChange={(value) => 
+                
                           setThemeForm(prev => ({ ...prev, headingWeight: parseInt(value) }))
                         }
                       >
